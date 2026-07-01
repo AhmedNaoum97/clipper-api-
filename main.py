@@ -50,6 +50,7 @@ def clip_video(request: ClipRequest):
         raise HTTPException(status_code=502, detail="Downloaded file is empty")
 
     # Step 2: Cut into 9:16 vertical clips with blur bars
+    # Blur is applied to a small downscaled copy then upscaled -> far cheaper on RAM/CPU
     clips_output_dir = os.path.join(job_dir, "output")
     os.makedirs(clips_output_dir, exist_ok=True)
 
@@ -58,13 +59,13 @@ def clip_video(request: ClipRequest):
         "-vf",
         (
             "split=2[blur][vid];"
-            "[blur]scale=1080:1920:force_original_aspect_ratio=increase,"
-            "crop=1080:1920,boxblur=20:20[bg];"
+            "[blur]scale=270:480,boxblur=10:5,scale=1080:1920[bg];"
             "[vid]scale=1080:1080[fg];"
             "[bg][fg]overlay=(W-w)/2:(H-h)/2"
         ),
         "-c:v", "libx264",
-        "-preset", "veryfast",
+        "-preset", "ultrafast",
+        "-threads", "2",
         "-c:a", "aac",
         "-segment_time", str(request.clip_duration),
         "-f", "segment",
