@@ -42,7 +42,8 @@ def clip_video(request: ClipRequest):
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([request.url])
+            info = ydl.extract_info(request.url, download=True)
+            video_title = info.get("title", "Untitled")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Download failed: {str(e)}")
 
@@ -98,5 +99,6 @@ def clip_video(request: ClipRequest):
     return {
         "job_id": job_id,
         "clip_count": len(clip_urls),
+        "video_title": video_title,
         "clips": clip_urls
     }
